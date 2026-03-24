@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
 const bookingRoutes = require("./route/booking.route");
 const userRoutes = require("./route/user.route");
 const vehicleRoutes = require("./route/vehicle.route");
@@ -10,13 +11,16 @@ dotenv.config();
 
 mongoose
   .connect(
-    process.env.MONGO_URI,
+    process.env.MONGO_URI,{
+      family: 4
+    }
   )
   .then(() => console.log("connection sucessfully!"))
   .catch((err) => console.error(err));
 
 const app = express();
 
+app.use(cors({ origin: process.env.CLIENT_URL }));
 app.use(express.json());
 
 app.get("/", (req, res) => {

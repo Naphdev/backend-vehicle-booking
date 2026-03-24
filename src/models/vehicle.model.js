@@ -32,10 +32,19 @@ const VehicleSchema = new mongoose.Schema(
     color: {
       type: String,
     },
+
   },
   {
     timestamps: true,
   }
 );
+
+VehicleSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_, ret) => {
+    ret.id = ret._id;
+    delete ret._id;
+  },
+});
 
 module.exports = mongoose.model("Vehicle", VehicleSchema);

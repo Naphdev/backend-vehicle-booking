@@ -22,10 +22,22 @@ const DriverSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    
+    qrcodeUrl: {
+      type: String,
+    },
+    
   },
   {
     timestamps: true,
   }
 );
 
+DriverSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_, ret) => {
+    ret.id = ret._id;
+    delete ret._id;
+  },
+});
 module.exports = mongoose.model("Driver", DriverSchema);

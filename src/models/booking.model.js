@@ -15,6 +15,13 @@ const StopSchema = new mongoose.Schema(
 );
 
 const BookingSchema = new mongoose.Schema({
+
+  bookingNumber: {
+    type: String,
+    required: true,
+    unique: true,
+  },
+  
   vehicleId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Vehicle",
@@ -72,9 +79,22 @@ const BookingSchema = new mongoose.Schema({
 
   status: {
     type: String,
-    enum: ["pending", "approved", "rejected", "cancelled", "completed"],
+    enum: ["pending", "approved", "cancelled", "completed"],
     default: "pending"
-  },
+   },
+  }, 
+  {
+    timestamps: true
+  }
+);
+
+
+BookingSchema.set("toJSON", {
+  virtuals: true,
+  transform: (_, ret) => {
+    ret.id = ret._id;
+    delete ret._id;
+  }
 });
 
 module.exports = mongoose.model("Booking", BookingSchema);

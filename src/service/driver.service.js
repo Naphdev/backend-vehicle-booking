@@ -5,7 +5,7 @@ const getDrivers = async () => {
 };
 
 const createDriver = async (data) => {
-  const { name, status, lineId, phone } = data;
+  const { name, status, lineId, phone, qrcodeUrl } = data;
 
   if (!name || !phone) {
     throw new Error("Driver name and phone number are required");
@@ -16,6 +16,7 @@ const createDriver = async (data) => {
     status,
     lineId,
     phone,
+    qrcodeUrl
   });
 };
 

@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 const Booking = require("../models/booking.model");
 
+
+
 const getBookings = async () => {
   return await Booking.find()
     .populate("vehicleId")
@@ -9,7 +11,7 @@ const getBookings = async () => {
 };
 
 const createBooking = async (data) => {
-
+  
   const {
     vehicleId,
     driverId,
@@ -21,26 +23,40 @@ const createBooking = async (data) => {
     startDate,
     endDate,
     tripType,
-    stops
-  } = data;
+    stops,
+    status
+  } = data; 
 
   if (!vehicleId || !bookedByUserId || !title || !purpose || !origin || !destination || !startDate || !endDate || !tripType) {
     throw new Error("All fields are required");
   }
 
-  return Booking.create({
-    vehicleId,
+  if (startDate > endDate) {
+    throw new Error("Start date must be before end date");
+  }
+
+
+  const booking = new Booking({
+    vehicleId,  
     driverId,
     bookedByUserId,
     title,
     purpose,
-    origin,
+    origin, 
     destination,
     startDate,
     endDate,
     tripType,
-    stops
+    stops,
+    status,
   });
+
+  booking.bookingNumber = "BK-" + booking._id.toString().slice(-6).toUpperCase();
+
+  await booking.save();
+
+  return booking
+
 
 };
 
@@ -62,6 +78,8 @@ const getBookingById = async (id) => {
     throw err;
   }
 
+
+
   return booking;
 };
 
@@ -81,16 +99,15 @@ const updateBooking = async (id, data) => {
     throw err;
   }
 
-  if (booking.status === "approved" && data.tripType) {
-    const err = new Error("Cannot update trip type after approval");
-    err.statusCode = 400;
-    throw err;
+    if (booking.startDate > booking.endDate) {
+    throw new Error("Start date must be before end date");
   }
 
   // whitelist fields
   const allowedFields = [
     "vehicleId",
     "driverId",
+    "bookedByUserId",
     "title",
     "purpose",
     "origin",
@@ -98,8 +115,10 @@ const updateBooking = async (id, data) => {
     "startDate",
     "endDate",
     "tripType",
-    "stops"
+    "stops",
+    "status",
   ];
+  
 
   // filter data
   const updateData = {};
@@ -114,7 +133,7 @@ const updateBooking = async (id, data) => {
     .findByIdAndUpdate(
       id,
       updateData,
-      { new: true, runValidators: true }
+      { returnDocument: 'after', runValidators: true }
     )
     .populate("vehicleId")
     .populate("driverId")

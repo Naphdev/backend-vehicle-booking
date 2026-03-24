@@ -52,7 +52,7 @@ const createBooking = async (req, res) => {
   try {
 
     const booking = await bookingService.createBooking(req.body);
-    return res.status(201).json({
+    return res.status(200).json({
       success: true,
       message: "Booking created successfully",
       data: booking,
