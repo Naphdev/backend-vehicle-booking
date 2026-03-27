@@ -107,7 +107,6 @@ const updateBooking = async (id, data) => {
   const allowedFields = [
     "vehicleId",
     "driverId",
-    "bookedByUserId",
     "title",
     "purpose",
     "origin",
