@@ -27,15 +27,61 @@ const createBooking = async (data) => {
     status
   } = data; 
 
+  const newStart = new Date(startDate);
+  const newEnd = new Date(endDate);
+
   if (!vehicleId || !bookedByUserId || !title || !purpose || !origin || !destination || !startDate || !endDate || !tripType) {
     throw new Error("All fields are required");
   }
 
-  if (startDate > endDate) {
-    throw new Error("Start date must be before end date");
+  if (newStart >= newEnd) {
+    throw new Error("วันที่เริ่มต้นต้องอยู่ก่อนวันที่สิ้นสุด");
   }
 
+  // ตรวจสอบว่ารถคันนี้ถูกจองในช่วงเวลาเดียวกันหรือไม่
+  const vehicleConflict = await Booking.findOne({
+    vehicleId: vehicleId,
+    startDate: { $lt: newEnd },
+    endDate: { $gt: newStart }
+  });
 
+  // ตรวจสอบว่าคนขับรถคนนี้ถูกจองในช่วงเวลาเดียวกันหรือไม่
+  const driverConflict = await Booking.findOne({
+    driverId: driverId,
+    startDate: { $lt: newEnd },
+    endDate: { $gt: newStart }
+  });
+
+    const errors = {
+    vehicle: false,
+    driver: false,
+    vehicleTime: null,
+    driverTime: null
+  };
+
+  if (vehicleConflict) {
+    errors.vehicle = true;
+    errors.vehicleTime = {
+      start: vehicleConflict.startDate,
+      end: vehicleConflict.endDate
+    };
+  }
+
+  if (driverConflict) {
+    errors.driver = true;
+    errors.driverTime = {
+      start: driverConflict.startDate,
+      end: driverConflict.endDate
+    };
+  }
+
+  if (errors.vehicle || errors.driver) {
+    throw {
+      code: 'CONFLICT',
+      ...errors
+    };
+  }
+  
   const booking = new Booking({
     vehicleId,  
     driverId,
@@ -44,8 +90,8 @@ const createBooking = async (data) => {
     purpose,
     origin, 
     destination,
-    startDate,
-    endDate,
+    startDate: newStart,
+    endDate: newEnd,
     tripType,
     stops,
     status,
@@ -56,6 +102,7 @@ const createBooking = async (data) => {
   await booking.save();
 
   return booking
+
 
 
 };
