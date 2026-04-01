@@ -96,21 +96,21 @@ const createBooking = async (req, res) => {
         });
       }
 
-      if (error.driver) {
-        const start = formatDate(error.driverTime.start);
-        const end = formatDate(error.driverTime.end);
+        if (error.driver) {
+          const start = formatDate(error.driverTime.start);
+          const end = formatDate(error.driverTime.end);
 
-        return res.status(409).json({
-          success: false,
-          message: `คนขับไม่ว่าง: ${start} - ${end} กรุณาเลือกเวลาใหม่หรือเปลี่ยนคนขับ`
-        });
+          return res.status(409).json({
+            success: false,
+            message: `คนขับไม่ว่าง: ${start} - ${end} กรุณาเลือกเวลาใหม่หรือเปลี่ยนคนขับ`
+          });
+        }
       }
-    }
 
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
   }
 };
 
@@ -124,10 +124,59 @@ const updateBooking = async (req, res) => {
     });
   } catch (error) {
     console.log("Error updating booking:", error);
-    return res.status(500).json({
-      success: false,
-      error: error?.message ?? String(error),
-    });
+    
+
+
+  if (error.code === 'CONFLICT') {
+
+      const formatDate = (date) => {
+        return new Date(date).toLocaleString('en-US', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+      };
+
+      if (error.vehicle && error.driver) {
+        const vStart = formatDate(error.vehicleTime.start);
+        const vEnd = formatDate(error.vehicleTime.end);
+
+        const dStart = formatDate(error.driverTime.start);
+        const dEnd = formatDate(error.driverTime.end);  
+
+        return res.status(409).json({
+          success: false,
+          message: `รถไม่ว่างช่วง ${vStart} - ${vEnd} คนขับไม่ว่างช่วง ${dStart} - ${dEnd}`
+        });
+      }
+
+      if (error.vehicle) {
+        const start = formatDate(error.vehicleTime.start);
+        const end = formatDate(error.vehicleTime.end);
+
+        return res.status(409).json({
+          success: false,
+          message: `รถไม่ว่าง: ${start} - ${end} กรุณาเลือกเวลาใหม่หรือเปลี่ยนรถ`
+        });
+      }
+
+        if (error.driver) {
+          const start = formatDate(error.driverTime.start);
+          const end = formatDate(error.driverTime.end);
+
+          return res.status(409).json({
+            success: false,
+            message: `คนขับไม่ว่าง: ${start} - ${end} กรุณาเลือกเวลาใหม่หรือเปลี่ยนคนขับ`
+          });
+        }
+      }
+
+      return res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
   }
 };
 

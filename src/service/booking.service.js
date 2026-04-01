@@ -146,8 +146,60 @@ const updateBooking = async (id, data) => {
     throw err;
   }
 
-    if (booking.startDate > booking.endDate) {
-    throw new Error("Start date must be before end date");
+  // ใช้ค่าจาก data ถ้ามีการแก้ ไม่งั้นใช้ค่าเดิม
+  const newStart = data.startDate ? new Date(data.startDate) : booking.startDate;
+  const newEnd = data.endDate ? new Date(data.endDate) : booking.endDate;
+
+  if (newStart >= newEnd) {
+    throw new Error("วันที่เริ่มต้นต้องอยู่ก่อนวันที่สิ้นสุด");
+  }
+
+  const vehicleId = data.vehicleId || booking.vehicleId;
+  const driverId = data.driverId || booking.driverId;
+
+  // กันการชน (exclude ตัวเองด้วย _id: { $ne: id })
+  const vehicleConflict = await Booking.findOne({
+    _id: { $ne: id },
+    vehicleId: vehicleId,
+    startDate: { $lt: newEnd },
+    endDate: { $gt: newStart }
+  });
+
+  const driverConflict = await Booking.findOne({
+    _id: { $ne: id },
+    driverId: driverId,
+    startDate: { $lt: newEnd },
+    endDate: { $gt: newStart }
+  });
+
+  const errors = {
+    vehicle: false,
+    driver: false,
+    vehicleTime: null,
+    driverTime: null
+  };
+
+  if (vehicleConflict) {
+    errors.vehicle = true;
+    errors.vehicleTime = {
+      start: vehicleConflict.startDate,
+      end: vehicleConflict.endDate
+    };
+  }
+
+  if (driverConflict) {
+    errors.driver = true;
+    errors.driverTime = {
+      start: driverConflict.startDate,
+      end: driverConflict.endDate
+    };
+  }
+
+  if (errors.vehicle || errors.driver) {
+    throw {
+      code: 'CONFLICT',
+      ...errors
+    };
   }
 
   // whitelist fields
@@ -164,9 +216,7 @@ const updateBooking = async (id, data) => {
     "stops",
     "status",
   ];
-  
 
-  // filter data
   const updateData = {};
 
   Object.keys(data).forEach((key) => {
